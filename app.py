@@ -220,6 +220,7 @@ def trigger_vercel_deployment():
 
 # 设置 Webhook 路由
 @app.post("/setWebhook")
+@app.get("/setWebhook")
 async def set_webhook():
     if not WEBHOOK_BASE_URL:
         return JSONResponse({"status": "error", "message": "未设置 WEBHOOK_BASE_URL 环境变量。"})
