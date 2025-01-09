@@ -19,9 +19,11 @@ OWNER_IDS = os.getenv("OWNER").split(", ")
 # 初始化 FastAPI
 app = FastAPI()
 
+
 # 获取关键词（优先从环境变量中读取）
 def get_keywords():
     return os.getenv("KEYWORDS").split(", ") if os.getenv("KEYWORDS") else []
+
 
 # 当前存储的关键词
 KEYWORDS = get_keywords()
@@ -111,13 +113,13 @@ async def handle_webhook(update: TelegramUpdate):
             await send_message(chat_id, get_keywords_message())
         elif text.startswith("/kwadd"):
             if len(text.split()) > 1:
-                keyword = text.split()[1]
+                keyword = text.split()[1:]
                 await handle_kwadd(chat_id, keyword)
             else:
                 await send_message(chat_id, "请提供一个关键词。")
         elif text.startswith("/kwdel"):
             if len(text.split()) > 1:
-                keyword = text.split()[1]
+                keyword = text.split()[1:]
                 await handle_kwdel(chat_id, keyword)
             else:
                 await send_message(chat_id, "请提供一个关键词。")
@@ -159,7 +161,7 @@ def get_help_message():
 /kwclear - 清空关键词
 /autokick - 切换自动踢人功能状态
 /savekeywords - 保存当前关键词到环境变量并触发 Vercel 部署
-""" 
+"""
 
 
 # 获取关于信息
@@ -172,7 +174,7 @@ def get_about_message():
 - 监听特定群组的消息。
 
 开发者: GamerNoTitle
-""" 
+"""
 
 
 # 获取当前存储的关键词
@@ -185,35 +187,58 @@ async def handle_kwadd(chat_id: int, keyword: str):
     if not keyword:
         await send_message(chat_id, "关键词不能为空！")
         return
-    if keyword in KEYWORDS:
-        await send_message(chat_id, f'关键词 "{keyword}" 已经存在: {str(KEYWORDS).replace("[", "").replace("]", "").replace("'", "")}')
+    exist_keywords = []
+    success_keywords = []
+    for kw in keyword:
+        if keyword in KEYWORDS:
+            exist_keywords.append(kw)
+        else:
+            KEYWORDS.append(keyword)
+            success_keywords.append(kw)
+    deploy_response = trigger_vercel_deployment()
+    if deploy_response.get("error"):
+        await send_message(chat_id, "部署关键词失败，请稍后再试！")
+        return
+    if exist_keywords:
+        msg = f"成功添加关键词: {', '.join(success_keywords)}\n关键词 {', '.join(exist_keywords)} 已经在关键词列表里面了！\n现有关键词：{str(KEYWORDS).replace('[', '').replace(']', '').replace('\'', '')}"
     else:
-        KEYWORDS.append(keyword)
-        # 触发部署
-        deploy_response = trigger_vercel_deployment()
-        if deploy_response.get("error"):
-            await send_message(chat_id, "重新部署失败，请稍后再试！")
-            return
-
-        await send_message(chat_id, f"成功添加关键词: {keyword}\n现有关键词：{str(KEYWORDS).replace('[', '').replace(']', '').replace('\'', '')}")
+        msg = f"成功添加关键词: {', '.join(success_keywords)}\n现有关键词：{str(KEYWORDS).replace('[', '').replace(']', '').replace('\'', '')}"
+    await send_message(chat_id, msg)
 
 
 # 删除关键词
-async def handle_kwdel(chat_id: int, keyword: str):
-    if not keyword:
+async def handle_kwdel(chat_id: int, keywords: str):
+    if not keywords:
         await send_message(chat_id, "关键词不能为空！")
         return
-    if keyword in KEYWORDS:
-        KEYWORDS.remove(keyword)
-        # 触发部署
-        deploy_response = trigger_vercel_deployment()
-        if deploy_response.get("error"):
-            await send_message(chat_id, "重新部署失败，请稍后再试！")
-            return
 
-        await send_message(chat_id, f"成功删除关键词: {keyword}\n现有关键词：{str(KEYWORDS).replace('[', '').replace(']', '').replace('\'', '')}")
+    keywords_list = keywords.split()  # 支持批量删除
+    exist_keywords = []
+    success_keywords = []
+
+    for kw in keywords_list:
+        if kw in KEYWORDS:
+            KEYWORDS.remove(kw)
+            success_keywords.append(kw)
+        else:
+            exist_keywords.append(kw)
+
+    # 触发部署
+    deploy_response = trigger_vercel_deployment()
+    if deploy_response.get("error"):
+        await send_message(chat_id, "部署关键词失败，请稍后再试！")
+        return
+
+    if success_keywords:
+        msg = f"成功删除关键词: {', '.join(success_keywords)}\n"
     else:
-        await send_message(chat_id, f'关键词 "{keyword}" 不存在:  {str(KEYWORDS).replace("[", "").replace("]", "").replace("'", "")}')
+        msg = ""
+
+    if exist_keywords:
+        msg += f'关键词 {", ".join(exist_keywords)} 不存在: {str(KEYWORDS).replace("[", "").replace("]", "").replace("\'", "")}'
+
+    msg += f"\n现有关键词：{str(KEYWORDS).replace('[', '').replace(']', '').replace('\'', '')}"
+    await send_message(chat_id, msg)
 
 
 # 清空关键词
