@@ -11,14 +11,16 @@ VERCEL_PROJECT_ID = os.getenv('VERCEL_PROJECT_ID')
 VERCEL_TEAM_ID = os.getenv('VERCEL_TEAM_ID')  # 如果是团队项目需要提供
 WEBHOOK_PATH = '/webhook'  # Webhook 路径
 WEBHOOK_BASE_URL = os.getenv('WEBHOOK_BASE_URL')  # 基础 URL，通常是你 Vercel 部署的 URL
+OWNER_ID = os.getenv('OWNER')  # 所有者的 Telegram 用户 ID
 
 # 初始化 FastAPI
 app = FastAPI()
 
-# 当前存储的关键词
-current_keywords = []
+# 获取 KEYWORDS 环境变量并初始化
+initial_keywords = os.getenv('KEYWORDS', '').split(',')
+current_keywords = initial_keywords if initial_keywords else []
 
-# 获取 Vercel 环境变量 API URL
+# 获取 Vercel环境变量 API URL
 def get_vercel_env_url():
     return f"https://api.vercel.com/v6/projects/{VERCEL_PROJECT_ID}/env"
 
@@ -73,6 +75,11 @@ async def handle_webhook(update: TelegramUpdate):
         user_id = update.message.get("from", {}).get("id")
         username = update.message.get("from", {}).get("username")
 
+        # 只有所有者才有权限修改关键词等操作
+        if user_id != int(OWNER_ID):
+            await send_message(chat_id, "您没有权限执行此操作！")
+            return JSONResponse({"status": "forbidden"})
+
         # 处理命令
         if text.startswith('/start') or text.startswith('/help'):
             await send_message(chat_id, get_help_message())
@@ -82,16 +89,23 @@ async def handle_webhook(update: TelegramUpdate):
             await send_message(chat_id, get_keywords_message())
         elif text.startswith('/kwadd'):
             keyword = text[len('/kwadd '):].strip()
-            await handle_kwadd(chat_id, keyword)
+            if keyword:
+                await handle_kwadd(chat_id, keyword)
+            else:
+                await send_message(chat_id, "请提供一个关键词。")
         elif text.startswith('/kwdel'):
             keyword = text[len('/kwdel '):].strip()
-            await handle_kwdel(chat_id, keyword)
+            if keyword:
+                await handle_kwdel(chat_id, keyword)
+            else:
+                await send_message(chat_id, "请提供一个要删除的关键词。")
         elif text.startswith('/kwclear'):
             await handle_kwclear(chat_id)
         elif text.startswith('/autokick'):
             await handle_autokick(chat_id)
         elif text.startswith('/savekeywords'):
             await save_keywords(chat_id)
+
     return JSONResponse({"status": "ok"})
 
 # 发送消息
@@ -163,7 +177,6 @@ async def handle_kwclear(chat_id: int):
 
 # 自动踢人功能
 async def handle_autokick(chat_id: int):
-    # 假设已经有一个变量用于保存 autokick 状态
     autokick_enabled = os.getenv('AUTOKICK', 'false') == 'true'
     new_status = 'false' if autokick_enabled else 'true'
     os.environ['AUTOKICK'] = new_status
@@ -177,7 +190,6 @@ async def save_keywords(chat_id: int):
         await send_message(chat_id, '保存关键词失败，请稍后再试！')
         return
     
-    # 触发重新部署
     deploy_response = trigger_vercel_deployment()
     
     if deploy_response.get('error'):
@@ -212,7 +224,7 @@ def trigger_vercel_deployment():
             'name': VERCEL_PROJECT_ID,
             'teamId': VERCEL_TEAM_ID,
             'gitSource': {
-                'branch': 'main'  # 确保是你要部署的分支
+                'branch': 'master'
             }
         }
     )
@@ -227,7 +239,6 @@ async def set_webhook():
 
     webhook_url = f"{WEBHOOK_BASE_URL}{WEBHOOK_PATH}"
     
-    # 设置 Telegram Webhook
     set_webhook_url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/setWebhook?url={webhook_url}"
 
     try:
