@@ -171,7 +171,7 @@ def get_about_message():
 
 # 获取当前存储的关键词
 def get_keywords_message():
-    return f"当前关键词: {KEYWORDS.replace('[', '').replace(']', '')}"
+    return f"当前关键词: {str(KEYWORDS).replace('[', '').replace(']', '')}"
 
 
 # 添加关键词
