@@ -1,4 +1,5 @@
 import os
+import sys
 import requests
 from fastapi import FastAPI, Request
 from pydantic import BaseModel
@@ -19,7 +20,14 @@ app = FastAPI()
 
 # 获取关键词（优先从环境变量中读取）
 def get_keywords():
+    if os.path.exists("keywords.txt"):
+        with open("keywords.txt") as f:
+            return f.read().split(", ")
     return os.getenv("KEYWORDS").split(", ") if os.getenv("KEYWORDS") else []
+
+def save_keywords_to_file():
+    with open("keywords.txt", "w") as f:
+        f.write(str(KEYWORDS).replace("[", "").replace("]", ""))
 
 # 当前存储的关键词
 KEYWORDS = get_keywords()
@@ -176,6 +184,7 @@ async def handle_kwadd(chat_id: int, keyword: str):
         await send_message(chat_id, f'关键词 "{keyword}" 已经存在。')
     else:
         KEYWORDS.append(keyword)
+        save_keywords_to_file()
         await send_message(chat_id, f"成功添加关键词: {keyword}")
 
 
@@ -186,15 +195,18 @@ async def handle_kwdel(chat_id: int, keyword: str):
         return
     if keyword in KEYWORDS:
         KEYWORDS.remove(keyword)
+        save_keywords_to_file()
         await send_message(chat_id, f"成功删除关键词: {keyword}")
     else:
         await send_message(chat_id, f'关键词 "{keyword}" 不存在。')
+
 
 
 # 清空关键词
 async def handle_kwclear(chat_id: int):
     global KEYWORDS
     KEYWORDS = []
+    save_keywords_to_file()
     await send_message(chat_id, "已清空所有关键词。")
 
 
@@ -272,5 +284,4 @@ async def set_webhook():
 # 启动 FastAPI 应用
 if __name__ == "__main__":
     import uvicorn
-
     uvicorn.run(app, host="0.0.0.0", port=8000)
