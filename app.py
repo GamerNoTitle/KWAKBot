@@ -192,24 +192,31 @@ async def handle_kwadd(chat_id: int, keyword: str):
     if not keyword:
         await send_message(chat_id, "关键词不能为空！")
         return
+
+    # 支持批量添加
+    keywords_list = keyword.split()  # 将传入的关键词按空格分开
     exist_keywords = []
     success_keywords = []
-    for kw in keyword:
-        if keyword in KEYWORDS:
+
+    for kw in keywords_list:
+        if kw in KEYWORDS:
             exist_keywords.append(kw)
         else:
-            KEYWORDS.append(keyword)
+            KEYWORDS.append(kw)
             success_keywords.append(kw)
+
+    # 触发部署
     deploy_response = trigger_vercel_deployment()
     if deploy_response.get("error"):
         await send_message(chat_id, f"部署关键词失败，请稍后再试！\n```json\n{deploy_response}\n```")
         return
+
     if exist_keywords:
         msg = f"成功添加关键词: {', '.join(success_keywords)}\n关键词 {', '.join(exist_keywords)} 已经在关键词列表里面了！\n现有关键词：{str(KEYWORDS).replace('[', '').replace(']', '').replace('\'', '')}"
     else:
         msg = f"成功添加关键词: {', '.join(success_keywords)}\n现有关键词：{str(KEYWORDS).replace('[', '').replace(']', '').replace('\'', '')}"
-    await send_message(chat_id, msg)
 
+    await send_message(chat_id, msg)
 
 # 删除关键词
 async def handle_kwdel(chat_id: int, keywords: str):
@@ -234,11 +241,10 @@ async def handle_kwdel(chat_id: int, keywords: str):
         await send_message(chat_id, f"部署关键词失败，请稍后再试！\n```json{deploy_response}\n```")
         return
 
+    # 构建反馈消息
+    msg = ""
     if success_keywords:
-        msg = f"成功删除关键词: {', '.join(success_keywords)}\n"
-    else:
-        msg = ""
-
+        msg += f"成功删除关键词: {', '.join(success_keywords)}\n"
     if exist_keywords:
         msg += f'关键词 {", ".join(exist_keywords)} 不存在: {str(KEYWORDS).replace("[", "").replace("]", "").replace("\'", "")}'
 
