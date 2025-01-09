@@ -75,6 +75,7 @@ def trigger_vercel_deployment():
     json_data = {
         "name": VERCEL_PROJECT_ID,
         "gitSource": {"ref": "master", "repoId": repo_id, "type": repo_type},
+        "target": "production"
     }
     if VERCEL_TEAM_ID:
         json_data["teamId"] = VERCEL_TEAM_ID
