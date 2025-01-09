@@ -62,7 +62,7 @@ def update_keywords_in_env(keywords):
 def trigger_vercel_deployment():
     # 找到当前的project的相关信息
     response = requests.get(
-        f"https://api.vercel.com/v9/projects/{VERCEL_PROJECT_ID}{f'?teamId={VERCEL_TEAM_ID}' if VERCEL_TEAM_ID else ""}",
+        f"https://api.vercel.com/v9/projects/{VERCEL_PROJECT_ID}{f'?teamId={VERCEL_TEAM_ID}' if VERCEL_TEAM_ID else ''}",
         headers={"Authorization": f"Bearer {VERCEL_TOKEN}"},
     )
     repo_id = response.json().get("link", {}).get("repoId", "")
