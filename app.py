@@ -15,7 +15,7 @@ VERCEL_TEAM_ID = os.getenv("VERCEL_TEAM_ID")  # 如果是团队项目需要提�
 WEBHOOK_PATH = "/webhook"  # Webhook 路径
 WEBHOOK_BASE_URL = os.getenv("WEBHOOK_BASE_URL")  # 基础 URL，通常是你 Vercel 部署的 URL
 # 获取所有者 ID
-OWNER_IDS = os.getenv("OWNER").split(", ")
+OWNER_IDS = list(map(int, os.getenv("OWNER").split(", ")))
 
 # 初始化 FastAPI
 app = FastAPI()
