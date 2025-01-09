@@ -177,7 +177,7 @@ def get_about_message():
 
 # 获取当前存储的关键词
 def get_keywords_message():
-    return f"当前关键词: {str(KEYWORDS).replace('[', '').replace(']', '')}"
+    return f"当前关键词: {str(KEYWORDS).replace('[', '').replace(']', '').replace('\'', '')}"
 
 
 # 添加关键词
@@ -186,7 +186,7 @@ async def handle_kwadd(chat_id: int, keyword: str):
         await send_message(chat_id, "关键词不能为空！")
         return
     if keyword in KEYWORDS:
-        await send_message(chat_id, f'关键词 "{keyword}" 已经存在: {KEYWORDS}')
+        await send_message(chat_id, f'关键词 "{keyword}" 已经存在: {str(KEYWORDS).replace("[", "").replace("]", "").replace("'", "")}')
     else:
         KEYWORDS.append(keyword)
         # 触发部署
@@ -195,7 +195,7 @@ async def handle_kwadd(chat_id: int, keyword: str):
             await send_message(chat_id, "重新部署失败，请稍后再试！")
             return
 
-        await send_message(chat_id, f"成功添加关键词: {keyword}\n现有关键词：{KEYWORDS}")
+        await send_message(chat_id, f"成功添加关键词: {keyword}\n现有关键词：{str(KEYWORDS).replace('[', '').replace(']', '').replace('\'', '')}")
 
 
 # 删除关键词
@@ -211,9 +211,9 @@ async def handle_kwdel(chat_id: int, keyword: str):
             await send_message(chat_id, "重新部署失败，请稍后再试！")
             return
 
-        await send_message(chat_id, f"成功删除关键词: {keyword}\n现有关键词：{KEYWORDS}")
+        await send_message(chat_id, f"成功删除关键词: {keyword}\n现有关键词：{str(KEYWORDS).replace('[', '').replace(']', '').replace('\'', '')}")
     else:
-        await send_message(chat_id, f'关键词 "{keyword}" 不存在: {KEYWORDS}')
+        await send_message(chat_id, f'关键词 "{keyword}" 不存在:  {str(KEYWORDS).replace("[", "").replace("]", "").replace("'", "")}')
 
 
 # 清空关键词
