@@ -4,6 +4,7 @@ import requests
 from fastapi import FastAPI, Request
 from pydantic import BaseModel
 from fastapi.responses import JSONResponse
+import uvicorn
 
 # Telegram Bot Token 和 Vercel API token
 TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
@@ -20,14 +21,7 @@ app = FastAPI()
 
 # 获取关键词（优先从环境变量中读取）
 def get_keywords():
-    if os.path.exists("keywords.txt"):
-        with open("keywords.txt") as f:
-            return f.read().split(", ")
     return os.getenv("KEYWORDS").split(", ") if os.getenv("KEYWORDS") else []
-
-def save_keywords_to_file():
-    with open("keywords.txt", "w") as f:
-        f.write(str(KEYWORDS).replace("[", "").replace("]", ""))
 
 # 当前存储的关键词
 KEYWORDS = get_keywords()
@@ -97,6 +91,7 @@ WEBHOOK_PATH = "/webhook"
 class TelegramUpdate(BaseModel):
     message: dict = None
     callback_query: dict = None
+    my_chat_member: dict = None  # 新成员加入的事件
 
 
 @app.post(WEBHOOK_PATH)
@@ -130,12 +125,20 @@ async def handle_webhook(update: TelegramUpdate):
             await handle_kwclear(chat_id)
         elif text.startswith("/autokick"):
             await handle_autokick(chat_id)
-        elif text.startswith("/savekeywords"):
-            await save_keywords(chat_id, user_id)
-        elif text.startswith("/readfile"):
-            with open("keywords.txt", "r") as f:
-                await send_message(chat_id, f.read())
-    return JSONResponse({"status": "ok"})
+    elif update.my_chat_member:  # 新成员加入事件
+        chat_id = update.my_chat_member["chat"]["id"]
+        user_id = update.my_chat_member["new_chat_member"]["id"]
+        username = update.my_chat_member["new_chat_member"].get("username", "")
+
+        # 检查用户名是否包含关键词
+        for keyword in KEYWORDS:
+            if keyword.lower() in (username or "").lower():
+                await kick_user(chat_id, user_id)
+                await send_message(
+                    chat_id,
+                    f"管理员踢出了用户 @{username}，因为用户名包含敏感词：{keyword}。",
+                )
+                break  # 如果有关键词匹配，跳出循环
 
 
 # 发送消息
@@ -156,7 +159,7 @@ def get_help_message():
 /kwclear - 清空关键词
 /autokick - 切换自动踢人功能状态
 /savekeywords - 保存当前关键词到环境变量并触发 Vercel 部署
-"""
+""" 
 
 
 # 获取关于信息
@@ -169,7 +172,7 @@ def get_about_message():
 - 监听特定群组的消息。
 
 开发者: GamerNoTitle
-"""
+""" 
 
 
 # 获取当前存储的关键词
@@ -186,7 +189,12 @@ async def handle_kwadd(chat_id: int, keyword: str):
         await send_message(chat_id, f'关键词 "{keyword}" 已经存在: {KEYWORDS}')
     else:
         KEYWORDS.append(keyword)
-        save_keywords_to_file()
+        # 触发部署
+        deploy_response = trigger_vercel_deployment()
+        if deploy_response.get("error"):
+            await send_message(chat_id, "重新部署失败，请稍后再试！")
+            return
+
         await send_message(chat_id, f"成功添加关键词: {keyword}\n现有关键词：{KEYWORDS}")
 
 
@@ -197,93 +205,45 @@ async def handle_kwdel(chat_id: int, keyword: str):
         return
     if keyword in KEYWORDS:
         KEYWORDS.remove(keyword)
-        save_keywords_to_file()
+        # 触发部署
+        deploy_response = trigger_vercel_deployment()
+        if deploy_response.get("error"):
+            await send_message(chat_id, "重新部署失败，请稍后再试！")
+            return
+
         await send_message(chat_id, f"成功删除关键词: {keyword}\n现有关键词：{KEYWORDS}")
     else:
         await send_message(chat_id, f'关键词 "{keyword}" 不存在: {KEYWORDS}')
-
 
 
 # 清空关键词
 async def handle_kwclear(chat_id: int):
     global KEYWORDS
     KEYWORDS = []
-    save_keywords_to_file()
+    # 触发部署
+    deploy_response = trigger_vercel_deployment()
+    if deploy_response.get("error"):
+        await send_message(chat_id, "重新部署失败，请稍后再试！")
+        return
+
     await send_message(chat_id, "已清空所有关键词。")
 
 
 # 自动踢人功能
 async def handle_autokick(chat_id: int):
-    autokick_enabled = os.getenv("AUTOKICK", "true") == "true"
-    new_status = "false" if autokick_enabled else "true"
-    os.environ["AUTOKICK"] = new_status
-    await send_message(
-        chat_id, f"自动踢人功能已{'启用' if new_status == 'true' else '禁用'}。"
-    )
+    global AUTO_KICK
+    AUTO_KICK = not AUTO_KICK
+    status = "开启" if AUTO_KICK else "关闭"
+    await send_message(chat_id, f"自动踢人功能已{status}。")
 
 
-# 保存当前关键词到环境变量并触发 Vercel 部署
-async def save_keywords(chat_id: int, user_id: int):
-    # 检查用户是否是所有者
-    if str(user_id) not in OWNER_IDS:
-        await send_message(chat_id, "你没有权限执行此操作！")
-        return
-
-    update_response = update_keywords_in_env(KEYWORDS)
-
-    if update_response.get("error"):
-        await send_message(chat_id, "保存关键词失败，请稍后再试！")
-        return
-
-    # 触发重新部署
-    deploy_response = trigger_vercel_deployment()
-
-    if deploy_response.get("error"):
-        await send_message(chat_id, "重新部署失败，请稍后再试！")
-        return
-
-    await send_message(
-        chat_id,
-        f"关键词已成功保存，并触发了 Vercel 重新部署！ 当前关键词: {', '.join(KEYWORDS)}",
-    )
+# 踢出用户
+async def kick_user(chat_id: int, user_id: int):
+    url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/kickChatMember"
+    response = requests.post(url, json={"chat_id": chat_id, "user_id": user_id})
+    return response.json()
 
 
-# 设置 Webhook 路由
-@app.post("/setWebhook")
-@app.get("/setWebhook")
-async def set_webhook():
-    if not WEBHOOK_BASE_URL:
-        return JSONResponse(
-            {"status": "error", "message": "未设置 WEBHOOK_BASE_URL 环境变量。"}
-        )
-
-    webhook_url = f"{WEBHOOK_BASE_URL}{WEBHOOK_PATH}"
-
-    # 设置 Telegram Webhook
-    set_webhook_url = (
-        f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/setWebhook?url={webhook_url}"
-    )
-
-    try:
-        response = requests.get(set_webhook_url)
-        result = response.json()
-
-        if result.get("ok"):
-            return JSONResponse({"status": "success", "message": "Webhook 设置成功！"})
-        else:
-            return JSONResponse(
-                {
-                    "status": "error",
-                    "message": f"Webhook 设置失败: {result.get('description')}",
-                }
-            )
-    except requests.exceptions.RequestException as e:
-        return JSONResponse(
-            {"status": "error", "message": f"设置 Webhook 时发生错误: {str(e)}"}
-        )
-
-
-# 启动 FastAPI 应用
+# 启动API
 if __name__ == "__main__":
-    import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
