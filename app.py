@@ -16,12 +16,11 @@ OWNER_IDS = os.getenv("OWNER").split(", ")
 
 # 初始化 FastAPI
 app = FastAPI()
-
+KEYWORDS = []
 
 # 获取关键词（优先从环境变量中读取）
 def get_keywords():
     return KEYWORDS.split(", ") if KEYWORDS else []
-
 
 # 当前存储的关键词
 KEYWORDS = get_keywords()
