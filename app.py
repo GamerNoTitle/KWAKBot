@@ -271,6 +271,40 @@ async def kick_user(chat_id: int, user_id: int):
     return response.json()
 
 
+# 设置 Webhook 路由
+@app.post("/setWebhook")
+@app.get("/setWebhook")
+async def set_webhook():
+    if not WEBHOOK_BASE_URL:
+        return JSONResponse(
+            {"status": "error", "message": "未设置 WEBHOOK_BASE_URL 环境变量。"}
+        )
+
+    webhook_url = f"{WEBHOOK_BASE_URL}{WEBHOOK_PATH}"
+
+    # 设置 Telegram Webhook
+    set_webhook_url = (
+        f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/setWebhook?url={webhook_url}"
+    )
+
+    try:
+        response = requests.get(set_webhook_url)
+        result = response.json()
+        if result.get("ok"):
+            return JSONResponse({"status": "success", "message": "Webhook 设置成功！"})
+        else:
+            return JSONResponse(
+                {
+                    "status": "error",
+                    "message": f"Webhook 设置失败: {result.get('description')}",
+                }
+            )
+    except requests.exceptions.RequestException as e:
+        return JSONResponse(
+            {"status": "error", "message": f"设置 Webhook 时发生错误: {str(e)}"}
+        )
+
+
 # 启动API
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)
