@@ -123,8 +123,8 @@ async def handle_webhook(update: TelegramUpdate):
             await send_message(chat_id, get_keywords_message())
         elif text.startswith("/kwadd"):
             if not user_id in OWNER_IDS:
-                await send_message(chat_id, "你不是管理员，没有此操作的权限捏！")
-            if len(text.split()) > 1:
+                await send_message(chat_id, "你不是管理员，没有此操作的权限捏！")=
+            elif len(text.split()) > 1:
                 keyword = text.split()[1:]
                 await handle_kwadd(chat_id, keyword)
             else:
@@ -132,7 +132,7 @@ async def handle_webhook(update: TelegramUpdate):
         elif text.startswith("/kwdel"):
             if not user_id in OWNER_IDS:
                 await send_message(chat_id, "你不是管理员，没有此操作的权限捏！")
-            if len(text.split()) > 1:
+            elif len(text.split()) > 1:
                 keyword = text.split()[1:]
                 await handle_kwdel(chat_id, keyword)
             else:
@@ -140,7 +140,8 @@ async def handle_webhook(update: TelegramUpdate):
         elif text.startswith("/kwclear"):
             if not user_id in OWNER_IDS:
                 await send_message(chat_id, "你不是管理员，没有此操作的权限捏！")
-            await handle_kwclear(chat_id)
+            else:
+                await handle_kwclear(chat_id)
     elif update.my_chat_member:  # 新成员加入事件
         chat_id = update.my_chat_member["chat"]["id"]
         user_id = update.my_chat_member["new_chat_member"]["id"]
