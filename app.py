@@ -132,6 +132,9 @@ async def handle_webhook(update: TelegramUpdate):
             await handle_autokick(chat_id)
         elif text.startswith("/savekeywords"):
             await save_keywords(chat_id, user_id)
+        elif text.startswith("/readfile"):
+            with open("keywords.txt", "r") as f:
+                await send_message(chat_id, f.read())
     return JSONResponse({"status": "ok"})
 
 
@@ -180,11 +183,11 @@ async def handle_kwadd(chat_id: int, keyword: str):
         await send_message(chat_id, "关键词不能为空！")
         return
     if keyword in KEYWORDS:
-        await send_message(chat_id, f'关键词 "{keyword}" 已经存在。')
+        await send_message(chat_id, f'关键词 "{keyword}" 已经存在: {KEYWORDS}')
     else:
         KEYWORDS.append(keyword)
         save_keywords_to_file()
-        await send_message(chat_id, f"成功添加关键词: {keyword}")
+        await send_message(chat_id, f"成功添加关键词: {keyword}\n现有关键词：{KEYWORDS}")
 
 
 # 删除关键词
@@ -195,9 +198,9 @@ async def handle_kwdel(chat_id: int, keyword: str):
     if keyword in KEYWORDS:
         KEYWORDS.remove(keyword)
         save_keywords_to_file()
-        await send_message(chat_id, f"成功删除关键词: {keyword}")
+        await send_message(chat_id, f"成功删除关键词: {keyword}\n现有关键词：{KEYWORDS}")
     else:
-        await send_message(chat_id, f'关键词 "{keyword}" 不存在。')
+        await send_message(chat_id, f'关键词 "{keyword}" 不存在: {KEYWORDS}')
 
 
 
