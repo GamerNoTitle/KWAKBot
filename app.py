@@ -62,6 +62,7 @@ def update_keywords_in_env(keywords):
 
 # 触发重新部署
 def trigger_vercel_deployment():
+    update_keywords_in_env(KEYWORDS)
     # 找到当前的project的相关信息
     response = requests.get(
         f"https://api.vercel.com/v9/projects/{VERCEL_PROJECT_ID}{f'?teamId={VERCEL_TEAM_ID}' if VERCEL_TEAM_ID else ''}",
