@@ -34,7 +34,8 @@ KEYWORDS = get_keywords()
 def update_keywords_in_env(keywords):
     # 获取项目信息
     response = requests.get(
-        f"https://api.vercel.com/v9/projects/v9/projects/{VERCEL_PROJECT_ID}/env"
+        f"https://api.vercel.com/v9/projects/v9/projects/{VERCEL_PROJECT_ID}/env",
+        headers={"Authorization": f"Bearer {VERCEL_TOKEN}"}
     )
     data = response.json().get("envs", [])
     print("get environ:", response.json())
