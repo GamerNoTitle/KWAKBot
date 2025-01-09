@@ -123,7 +123,7 @@ async def handle_webhook(update: TelegramUpdate):
             await send_message(chat_id, get_keywords_message())
         elif text.startswith("/kwadd"):
             if not user_id in OWNER_IDS:
-                await send_message(chat_id, "你不是管理员，没有此操作的权限捏！")=
+                await send_message(chat_id, "你不是管理员，没有此操作的权限捏！")
             elif len(text.split()) > 1:
                 keyword = text.split()[1:]
                 await handle_kwadd(chat_id, keyword)
