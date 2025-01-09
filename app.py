@@ -62,7 +62,9 @@ def update_keywords_in_env(keywords):
 
 # 触发重新部署
 def trigger_vercel_deployment():
-    update_keywords_in_env(KEYWORDS)
+    response = update_keywords_in_env(KEYWORDS)
+    if "error" in response:
+        return response
     # 找到当前的project的相关信息
     response = requests.get(
         f"https://api.vercel.com/v9/projects/{VERCEL_PROJECT_ID}{f'?teamId={VERCEL_TEAM_ID}' if VERCEL_TEAM_ID else ''}",
@@ -199,7 +201,7 @@ async def handle_kwadd(chat_id: int, keyword: str):
             success_keywords.append(kw)
     deploy_response = trigger_vercel_deployment()
     if deploy_response.get("error"):
-        await send_message(chat_id, "部署关键词失败，请稍后再试！")
+        await send_message(chat_id, f"部署关键词失败，请稍后再试！\n```json\n{deploy_response}\n```")
         return
     if exist_keywords:
         msg = f"成功添加关键词: {', '.join(success_keywords)}\n关键词 {', '.join(exist_keywords)} 已经在关键词列表里面了！\n现有关键词：{str(KEYWORDS).replace('[', '').replace(']', '').replace('\'', '')}"
@@ -228,7 +230,7 @@ async def handle_kwdel(chat_id: int, keywords: str):
     # 触发部署
     deploy_response = trigger_vercel_deployment()
     if deploy_response.get("error"):
-        await send_message(chat_id, "部署关键词失败，请稍后再试！")
+        await send_message(chat_id, f"部署关键词失败，请稍后再试！\n```json{deploy_response}\n```")
         return
 
     if success_keywords:
@@ -250,7 +252,7 @@ async def handle_kwclear(chat_id: int):
     # 触发部署
     deploy_response = trigger_vercel_deployment()
     if deploy_response.get("error"):
-        await send_message(chat_id, "重新部署失败，请稍后再试！")
+        await send_message(chat_id, f"重新部署失败，请稍后再试！\n```json\n{deploy_response}\n```")
         return
 
     await send_message(chat_id, "已清空所有关键词。")
