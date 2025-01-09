@@ -37,6 +37,7 @@ def update_keywords_in_env(keywords):
         f"https://api.vercel.com/v9/projects/v9/projects/{VERCEL_PROJECT_ID}/env"
     )
     data = response.json().get("envs", [])
+    print(response.json())
     env_id = ""
     for env in data:
         if env.get("key", "") == "KEYWORDS":
@@ -58,6 +59,7 @@ def update_keywords_in_env(keywords):
         },
         json=json_data,
     )
+    print(response.json())
     return response.json()
 
 
@@ -73,6 +75,7 @@ def trigger_vercel_deployment():
     )
     repo_id = response.json().get("link", {}).get("repoId", "")
     repo_type = response.json().get("link", {}).get("type", "")
+    print(response.json())
     if not repo_id or not repo_type:
         return {"error": f"Cannot found repo_id or repo_type\n```json\n{response.json()}\n```"}
 
@@ -88,6 +91,7 @@ def trigger_vercel_deployment():
         headers={"Authorization": f"Bearer {VERCEL_TOKEN}"},
         json=json_data,
     )
+    print(response.json())
     return response.json()
 
 
