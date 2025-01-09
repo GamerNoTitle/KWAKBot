@@ -6,15 +6,6 @@
         "use": "@vercel/python"
       }
     ],
-    "env": {
-      "TELEGRAM_BOT_TOKEN": "@telegram_bot_token",
-      "VERCEL_TOKEN": "@vercel_token",
-      "VERCEL_PROJECT_ID": "@vercel_project_id",
-      "VERCEL_TEAM_ID": "@vercel_team_id", 
-      "WEBHOOK_BASE_URL": "@webhook_base_url",
-      "AUTOKICK": "false",
-      "KEYWORDS": "keyword1,keyword2"
-    },
     "routes": [
       {
         "src": "/webhook",
