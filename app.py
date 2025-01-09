@@ -1,4 +1,5 @@
 import os
+import json
 import sys
 import requests
 from fastapi import FastAPI, Request
@@ -41,7 +42,7 @@ def update_keywords_in_env(keywords):
         if env.get("key", "") == "KEYWORDS":
             env_id = env.get("id", "")
     if not env_id:
-        return {"error": True}
+        return {"error": f"env_id cannot be found!\n```json\n{json.dumps(data.json())}\n```"}
     json_data = {
         "key": "KEYWORDS",
         "value": ", ".join(keywords),
@@ -150,7 +151,7 @@ async def handle_webhook(update: TelegramUpdate):
 # 发送消息
 async def send_message(chat_id: int, text: str):
     url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
-    response = requests.post(url, json={"chat_id": chat_id, "text": text})
+    response = requests.post(url, json={"chat_id": chat_id, "text": text, "parse_mode": "Markdown"})
     return response.json()
 
 
