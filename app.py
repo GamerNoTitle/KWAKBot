@@ -170,11 +170,9 @@ def get_help_message():
 /help - 显示帮助信息
 /about - 显示机器人信息
 /keywords - 显示关键词
-/kwadd <关键词> - 添加关键词
-/kwdel <关键词> - 删除关键词
-/kwclear - 清空关键词
-/autokick - 切换自动踢人功能状态
-/savekeywords - 保存当前关键词到环境变量并触发 Vercel 部署
+/kwadd <关键词> - 添加关键词（管理员）
+/kwdel <关键词> - 删除关键词（管理员）
+/kwclear - 清空关键词（管理员）
 """
 
 
