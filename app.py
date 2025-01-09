@@ -42,7 +42,7 @@ def update_keywords_in_env(keywords):
         if env.get("key", "") == "KEYWORDS":
             env_id = env.get("id", "")
     if not env_id:
-        return {"error": f"env_id cannot be found!\n```json\n{json.dumps(data.json())}\n```"}
+        return {"error": f"env_id cannot be found!\n```json\n{json.dumps(response.json())}\n```"}
     json_data = {
         "key": "KEYWORDS",
         "value": ", ".join(keywords),
