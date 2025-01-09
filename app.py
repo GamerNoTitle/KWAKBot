@@ -186,7 +186,7 @@ def get_about_message():
 - 管理员可以管理关键词。
 - 监听特定群组的消息。
 
-开发者: GamerNoTitle
+开源地址：https://github.com/GamerNoTitle/KWAKBot
 """
 
 
