@@ -74,7 +74,7 @@ def trigger_vercel_deployment():
     repo_id = response.json().get("link", {}).get("repoId", "")
     repo_type = response.json().get("link", {}).get("type", "")
     if not repo_id or not repo_type:
-        return {"error": True}
+        return {"error": f"Cannot found repo_id or repo_type\n```json\n{response.json()}\n```"}
 
     json_data = {
         "name": VERCEL_PROJECT_ID,
