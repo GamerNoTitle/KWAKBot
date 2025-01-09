@@ -192,13 +192,13 @@ def get_keywords_message():
 
 
 # 添加关键词
-async def handle_kwadd(chat_id: int, keyword: str):
+async def handle_kwadd(chat_id: int, keyword: list):
     if not keyword:
         await send_message(chat_id, "关键词不能为空！")
         return
 
     # 支持批量添加
-    keywords_list = keyword.split()  # 将传入的关键词按空格分开
+    keywords_list = keyword # 将传入的关键词按空格分开
     exist_keywords = []
     success_keywords = []
 
@@ -223,12 +223,12 @@ async def handle_kwadd(chat_id: int, keyword: str):
     await send_message(chat_id, msg)
 
 # 删除关键词
-async def handle_kwdel(chat_id: int, keywords: str):
+async def handle_kwdel(chat_id: int, keywords: list):
     if not keywords:
         await send_message(chat_id, "关键词不能为空！")
         return
 
-    keywords_list = keywords.split()  # 支持批量删除
+    keywords_list = keywords
     exist_keywords = []
     success_keywords = []
 
